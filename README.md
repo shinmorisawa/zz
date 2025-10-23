@@ -7,7 +7,17 @@ please, *please*, **PLEASE** don't use on prod
 dependencies
 - ninja
 - meson
+
+### zzkern
 ```bash
+cd kernel
+meson setup build
+ninja -C build
+```
+
+### zzboot
+```bash
+cd boot
 meson setup build
 ninja -C build
 ```
