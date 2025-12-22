@@ -18,8 +18,7 @@ ninja -C build
 ### zzboot
 ```bash
 cd boot
-meson setup build
-ninja -C build
+make
 ```
 
 ## contributing

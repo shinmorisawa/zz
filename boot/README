@@ -1,0 +1,1 @@
+this is zzboot. a simple bootloader for the zz kernel. tiny32 is provided as a simple but effective elf binary to test zzboot for x86 chips
