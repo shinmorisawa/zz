@@ -5,14 +5,13 @@ please, *please*, **PLEASE** don't use on prod
 
 ## building
 dependencies
-- ninja
-- meson
+- make
 
 ### zzkern
 ```bash
 cd kernel
-meson setup build
-ninja -C build
+make
+# make run if you want qemu!
 ```
 
 ### zzboot
