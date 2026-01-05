@@ -67,6 +67,8 @@ do_e820:
 	ret
 
 load_stage2:
+    xor ax, ax
+    mov es, ax
     mov dl, 0x80
     mov si, dap
     mov ah, 0x42
@@ -77,6 +79,8 @@ load_stage2:
     ret
 
 load_kernel:
+    xor ax, ax
+    mov es, ax
     mov dl, 0x80
     mov si, dap_elf
     mov ah, 0x42
@@ -115,7 +119,7 @@ align 16
 dap:
     db 16
     db 0
-    dw 32
+    dw 33
     dw 0x9000
     dw 0x0000
     dq 3
@@ -124,9 +128,9 @@ align 16
 dap_elf:
     db 16
     db 0
-    dw 512
+    dw 64
     dw 0x0000
     dw 0x2000
-    dq 35
+    dq 36
 
 times 1024-($-$$) db 0

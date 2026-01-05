@@ -1,9 +1,11 @@
-bits 32
+bits 64
 global _start
 extern kstart
 
 _start:
-    mov esp, 0x90000
+    mov rsp, 0x90000
+    and rsp, -16
+    sub rsp, 8
     call kstart
 .hang:
     cli

@@ -1,21 +1,13 @@
-void write_char(char a, char color, int index) {
-    volatile char* vga = (volatile char*)0xB8000;
-    vga[index * 2] = a;
-    vga[index * 2 + 1] = color;
-}
-
-void write_string(char* string, char color, int y, int x) {
-    int index = x + (y * 80);
-    while (*string != '\0') {
-        write_char(*string, color, index);
-        string++;
-        index++;
-    }
-}
+#include "types.h"
 
 void kstart(void) {
-    write_string("zz kernel...", 0x0F, 0, 0);
-    write_string("booted!!!!", 0x0F, 1, 0);
+    volatile u16* vga = (volatile u16*)0xB8000;
+    vga[0] = (0xF0 << 8) | 'K';
+    vga[1] = (0xF0 << 8) | 'E';
+    vga[2] = (0xF0 << 8) | 'R';
+    vga[3] = (0xF0 << 8) | 'N';
+    vga[4] = (0xF0 << 8) | 'E';
+    vga[5] = (0xF0 << 8) | 'L';
 
     for (;;) {}
 }

@@ -1,4 +1,4 @@
-bits 32
+bits 64
 global _start
 
 section .text
@@ -25,7 +25,7 @@ _start:
     mov byte [0xB8011], 0x0F
     mov byte [0xB8013], 0x0F
 
-    mov eax, 42
+    mov rax, 42
     jmp halt
 
 halt:
