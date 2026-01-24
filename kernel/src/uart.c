@@ -13,7 +13,7 @@ void uart_init(void) {
     outb(COM1 + 2, 0xC7);
     outb(COM1 + 4, 0x0B);
 
-    uart_writes("zzkern\n");
+    uart_writes("zzkern uart lfg\n");
 }
 
 int uart_is_transmit_empty(void) {
@@ -30,4 +30,19 @@ void uart_writes(char* s) {
         uart_write(*s);
         s++;
     }
+}
+
+void uart_write_hex(u64 value) {
+    const char* hex = "0123456789ABCDEF";
+    char out[17];
+
+    for (int i = 0; i < 16; i++) {
+        u8 nibble = (value >> ((15 - i) * 4)) & 0xF;
+        out[i] = hex[nibble];
+    }
+
+    out[16] = '\0';
+
+    uart_writes(out);
+    uart_write('\n');
 }

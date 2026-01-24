@@ -1,14 +1,31 @@
 #include "types.h"
+#if CONFIG_UART
 #include "uart.h"
+#endif
 #include "paging.h"
+#include "interrupt.h"
+#include "handlers.h"
+#include "utils.h"
+
+extern void (*timer_handler_stub)();
+
+void halt(void) {
+    asm volatile ("hlt" : : :);
+}
 
 void kstart(void) {
-    // paging_init();
+    paging_init();
+    #if CONFIG_UART
     uart_init();
+    #endif
+    idt_init();
     
     // just a joke, will actually remove later
     uart_writes("i like eating cereal because i'm serial!\n");
     *(volatile u8*)0xB8000 = 'Z';
 
-    for (;;) {}
+    for (;;) {
+        sleep(50);
+        klog("hello! %x\n", ticks);
+    }
 }
