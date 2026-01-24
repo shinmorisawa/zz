@@ -1,136 +1,120 @@
-bits 16
-org 0x8000
+bits 32
+section .stage1
+global protected_entry
+extern long_trampoline
 
-stage1_start:
+protected_entry:
     cli
-    xor ax, ax
+    mov ax, 0x10
+    mov ds, ax
     mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov esp, 0x90000 ; temp stack
 
-    mmap_ent equ 0x5000            ; the number of entries will be stored at 0x5000
+    call check_a20 ; checks a20
+    call test_print ; prints zzboot
 
-    call enable_a20 ; enables a20, aka high mem
-    call do_e820
-    call load_stage2 ; stage2 because that's what's next
-    call load_kernel ; load the kernel elf file
-    jmp protected_init ; go into protected mode
+    jmp start_long
 
-enable_a20:
-    in al, 0x92
-    or al, 0x02
-    out 0x92, al
-    ret
-
-do_e820:
-    mov di, 0x5004          ; Set di to 0x5004. Otherwise this code will get stuck in `int 0x15` after some entries are fetched 
-	xor ebx, ebx		; ebx must be 0 to start
-	xor bp, bp		; keep an entry count in bp
-	mov edx, 0x0534D4150	; Place "SMAP" into edx
-	mov eax, 0xe820
-	mov [es:di + 20], dword 1	; force a valid ACPI 3.X entry
-	mov ecx, 24		; ask for 24 bytes
-	int 0x15
-	jc short .failed	; carry set on first call means "unsupported function"
-	mov edx, 0x0534D4150	; Some BIOSes apparently trash this register?
-	cmp eax, edx		; on success, eax must have been reset to "SMAP"
-	jne short .failed
-	test ebx, ebx		; ebx = 0 implies list is only 1 entry long (worthless)
-	je short .failed
-	jmp short .jmpin
-.e820lp:
-	mov eax, 0xe820		; eax, ecx get trashed on every int 0x15 call
-	mov [es:di + 20], dword 1	; force a valid ACPI 3.X entry
-	mov ecx, 24		; ask for 24 bytes again
-	int 0x15
-	jc short .e820f		; carry set means "end of list already reached"
-	mov edx, 0x0534D4150	; repair potentially trashed register
-.jmpin:
-	jcxz .skipent		; skip any 0 length entries
-	cmp cl, 20		; got a 24 byte ACPI 3.X response?
-	jbe short .notext
-	test byte [es:di + 20], 1	; if so: is the "ignore this data" bit clear?
-	je short .skipent
-.notext:
-	mov ecx, [es:di + 8]	; get lower uint32_t of memory region length
-	or ecx, [es:di + 12]	; "or" it with upper uint32_t to test for zero
-	jz .skipent		; if length uint64_t is 0, skip entry
-	inc bp			; got a good entry: ++count, move to next storage spot
-	add di, 24
-.skipent:
-	test ebx, ebx		; if ebx resets to 0, list is complete
-	jne short .e820lp
-.e820f:
-	mov [es:mmap_ent], bp	; store the entry count
-	clc			; there is "jc" on end of list to this point, so the carry must be cleared
-	ret
-.failed:
-	stc			; "function unsupported" error exit
-	ret
-
-load_stage2:
-    xor ax, ax
-    mov es, ax
-    mov dl, 0x80
-    mov si, dap
-    mov ah, 0x42
-
-    int 0x13
-    jc error
+test_print:
+    mov byte [0xB8000], 'Z'
+    mov byte [0xB8002], 'Z'
+    mov byte [0xB8004], 'B'
+    mov byte [0xB8006], 'O'
+    mov byte [0xB8008], 'O'
+    mov byte [0xB800A], 'T'
+    mov byte [0xB8001], 0x0F
+    mov byte [0xB8003], 0x0F
+    mov byte [0xB8005], 0x0F
+    mov byte [0xB8007], 0x0F
+    mov byte [0xB8009], 0x0F
+    mov byte [0xB800B], 0x0F
 
     ret
 
-load_kernel:
+check_a20:
+    push ds
+    push es
+    
     xor ax, ax
+    mov ds, ax
     mov es, ax
-    mov dl, 0x80
-    mov si, dap_elf
-    mov ah, 0x42
 
-    int 0x13
-    jc error
+    mov word [0x2000], 0x1337
+    mov word [0x102000], 0x3713
 
+    cmp word [0x2000], 0x3713
+    je .wompwomp
+
+    pop es
+    pop ds
     ret
 
-protected_init:
-    cli ; this is like the third time just to be safe
-    lgdt [gdt_descriptor]
+.wompwomp:
+    mov byte [0xB8200], 'N'
+    mov byte [0xB8202], 'O'
+    mov byte [0xB8204], ' '
+    mov byte [0xB8206], 'A'
+    mov byte [0xB8208], '2'
+    mov byte [0xB820A], '0'
+    jmp halt
+
+start_long:
+    lgdt [gdt64_descriptor]
+
+    mov eax, pml4
+    mov cr3, eax
+
+    mov eax, cr4
+    or eax, 1 << 5
+    mov cr4, eax
+
+    mov ecx, 0xC0000080
+    rdmsr
+    or eax, 1 << 8
+    wrmsr
 
     mov eax, cr0
-    or eax, 1
+    or eax, 1 << 31
     mov cr0, eax
 
-    jmp 0x08:0x9000
+    jmp 0x08:long_trampoline
 
-error:
+halt:
     cli
     hlt
 
 align 8
-gdt_start:
+gdt64:
     dq 0x0000000000000000 ; null
-    dq 0x00CF9A000000FFFF ; code
-    dq 0x00CF92000000FFFF ; data
-gdt_end:
+    dq 0x00209A000000FFFF ; code
+    dq 0x000092000000FFFF ; data
+gdt64_end:
 
-gdt_descriptor:
-    dw gdt_end - gdt_start - 1
-    dd gdt_start
+gdt64_descriptor:
+    dw gdt64_end - gdt64 - 1
+    dq gdt64
 
-align 16
-dap:
-    db 16
-    db 0
-    dw 33
-    dw 0x9000
-    dw 0x0000
-    dq 3
+align 4096
+pml4:
+    dq pdpt + 0x003
+    times 511 dq 0
 
-align 16
-dap_elf:
-    db 16
-    db 0
-    dw 64
-    dw 0x0000
-    dw 0x2000
-    dq 36
+align 4096
+pdpt:
+    dq pd + 0x003
+    times 511 dq 0
 
-times 1024-($-$$) db 0
+align 4096
+pd:
+    dq 0x00000000 + 0x083
+    dq 0x00200000 + 0x083
+    dq 0x00400000 + 0x083
+    dq 0x00600000 + 0x083
+    dq 0x00800000 + 0x083
+    dq 0x00A00000 + 0x083
+    dq 0x00C00000 + 0x083
+    dq 0x00E00000 + 0x083
+    times 504 dq 0

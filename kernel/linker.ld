@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 0x100000;
+    . = 0x200000;
     .text : {
         *(.text*)
     }
@@ -18,4 +18,12 @@ SECTIONS {
         *(COMMON)
         *(.bss*)
     }
+
+    kernel_end = .;
+
+    . = ALIGN(16);
+    kernel_stack_bottom = .;
+    . += 32K;
+    kernel_stack_top = .;
+    . += 4K;
 }

@@ -1,13 +1,14 @@
 #include "types.h"
+#include "uart.h"
+#include "paging.h"
 
 void kstart(void) {
-    volatile u16* vga = (volatile u16*)0xB8000;
-    vga[0] = (0xF0 << 8) | 'K';
-    vga[1] = (0xF0 << 8) | 'E';
-    vga[2] = (0xF0 << 8) | 'R';
-    vga[3] = (0xF0 << 8) | 'N';
-    vga[4] = (0xF0 << 8) | 'E';
-    vga[5] = (0xF0 << 8) | 'L';
+    // paging_init();
+    uart_init();
+    
+    // just a joke, will actually remove later
+    uart_writes("i like eating cereal because i'm serial!\n");
+    *(volatile u8*)0xB8000 = 'Z';
 
     for (;;) {}
 }
