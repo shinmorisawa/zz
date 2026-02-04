@@ -129,3 +129,10 @@ void sleep(u64 milliseconds) {
     }
     return;
 }
+
+void kpanic(void) {
+    asm volatile ("cli");
+    while (1) {
+        asm volatile ("hlt");
+    }
+}

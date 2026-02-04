@@ -6,6 +6,11 @@
 static IDTEntry idt[256];
 static IDTPointer idt_ptr;
 
+extern void isr32();
+extern void isr14();
+extern void isr0();
+extern void isr1();
+
 static void pic_remap(void) {
     u8 a1 = inb(0x21);
     u8 a2 = inb(0xA1);
@@ -47,7 +52,10 @@ void pit_init(void) {
 void idt_init(void) {
     pic_remap();
     pit_init();
-    idt_add_entry(0x20, timer_handler);
+    idt_add_entry(0x20, isr32);
+    idt_add_entry(0x0, isr0);
+    idt_add_entry(0x1, isr1);
+    idt_add_entry(0xE, isr14);
 
     idt_ptr.limit = sizeof(idt) - 1;
     idt_ptr.base  = (u64)&idt;

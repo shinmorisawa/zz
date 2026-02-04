@@ -19,5 +19,6 @@ void print_dec(u64 base);
 void kvprintf(const char* fmt, va_list args);
 void kprintf(const char* fmt, ...);
 void sleep(u64 milliseconds);
+void kpanic(void);
 
 #define klog kprintf

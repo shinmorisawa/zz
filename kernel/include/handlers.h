@@ -4,13 +4,11 @@
 
 extern volatile u64 ticks;
 
-struct InterruptFrame {
+typedef struct InterruptFrame {
+    u64 rcx, rdx, rsi, rdi, r8, r9, r10, r11, rax;
+    u64 vector;
+    u64 error_code;
     u64 rip;
     u64 cs;
-    u64 flags;
-    u64 rsp;
-    u64 ss;
-};
-
-__attribute__((interrupt))
-void timer_handler(struct InterruptFrame* frame);
+    u64 rflags;
+} InterruptFrame;
