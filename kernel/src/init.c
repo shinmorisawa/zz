@@ -23,7 +23,6 @@ void kstart(void) {
     *(volatile u8*)0xB8000 = 'Z';
 
     for (;;) {
-        sleep(50);
-        klog("hello! %x\n", ticks);
+        sleep(1);
     }
 }

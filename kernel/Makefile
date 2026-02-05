@@ -30,6 +30,9 @@ run: final
 run-debug: final
 	qemu-system-x86_64 -drive format=raw,file=$(BUILDDIR)/final.img -serial stdio -s -S
 
+run-nodisplay: final
+	qemu-system-x86_64 -nographic -drive format=raw,file=$(BUILDDIR)/final.img -serial mon:stdio
+
 $(TARGET): $(OBJS) $(OBJC)
 	mkdir -p $(BUILDDIR)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(OBJC)

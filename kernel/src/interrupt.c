@@ -61,7 +61,7 @@ void idt_init(void) {
     idt_ptr.base  = (u64)&idt;
 
     asm volatile ("lidt %0" : : "m"(idt_ptr));
-    outb(0x21, 0xFE);
+    outb(0x21, 0xFF & ~(1));
     asm volatile ("sti" : : :);
 }
 

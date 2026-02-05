@@ -8,6 +8,8 @@ mbr_start:
     xor ax, ax
     mov es, ax
 
+    mov [0x2000], dl
+
     call enable_a20 ; enables a20, aka high mem
     call load_stage1 ; stage1 because that's what's next
     call load_kernel ; load the kernel elf file
@@ -23,7 +25,7 @@ load_stage1:
     xor ax, ax
     mov ds, ax
     mov es, ax
-    mov dl, 0x80
+    mov dl, [0x2000]
     mov si, dap
     mov ah, 0x42
 

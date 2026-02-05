@@ -29,7 +29,7 @@ isr_stub:
     pop r11
     pop rax
 
-    add rsp, 8
+    add rsp, 16
 
     iretq
 
