@@ -17,5 +17,4 @@ long_trampoline:
 
     call load_elf
 
-
 ; times 16896-($-$$) db 0

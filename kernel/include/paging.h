@@ -9,6 +9,7 @@
 typedef u64 PML4Entry;
 typedef u64 PDPTEntry;
 typedef u64 PDEntry;
+typedef u64 PTEntry;
 
 /* paging flags, thanks chatgpt */
 #define PTE_PRESENT   (1ULL << 0)

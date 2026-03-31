@@ -1,6 +1,6 @@
-bits 16
 section .mbr
-extern protected_entry
+bits 16
+extern protected_init
 
 mbr_start:
     cli
@@ -10,6 +10,7 @@ mbr_start:
 
     mov [0x2000], dl
 
+    ;call vesa_init ; init vesa!!!
     call enable_a20 ; enables a20, aka high mem
     call load_stage1 ; stage1 because that's what's next
     call load_kernel ; load the kernel elf file
@@ -67,30 +68,34 @@ load_kernel:
 
     ret
 
-protected_init:
-    cli ; this is like the third time just to be safe
-    lgdt [gdt_descriptor]
-
-    mov eax, cr0
-    or eax, 1
-    mov cr0, eax
-
-    jmp 0x08:protected_entry
+;vesa_init:
+;    mov ax, 0x4F00
+;    int 0x10
+;
+;    mov ax, 0x1000
+;    mov es, ax
+;    mov cx, 0x101
+;    mov di, 0
+;    mov ax, 0x4F01 ; get mode info
+;    int 0x10
+;
+;    cmp ax, 0x004F
+;    jne .failed
+;
+;    mov ax, 0x4F02 ; set mode
+;    mov bx, 0x101 ; getting desparate
+;    or  bx, 0x4000 ; linear
+;    int 0x10
+;
+;    cmp ax, 0x004F
+;    jne .failed
+;
+;.failed:
+;    ret
 
 error:
     cli
     hlt
-
-align 8
-gdt_start:
-    dq 0x0000000000000000 ; null
-    dq 0x00CF9A000000FFFF ; code
-    dq 0x00CF92000000FFFF ; data
-gdt_end:
-
-gdt_descriptor:
-    dw gdt_end - gdt_start - 1
-    dd gdt_start
 
 align 16
 dap:

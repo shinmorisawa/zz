@@ -20,5 +20,13 @@ SECTIONS {
         . = ALIGN(512);
     }
 
+    /DISCARD/ : {
+        *(.note*)
+        *(.comment*)
+        *(.eh_frame*)
+        *(.debug*)
+        *(.interp)
+    }
+
     . = ALIGN(512);
 }

@@ -3,13 +3,19 @@
 #include "interrupt.h"
 #include "handlers.h"
 
-static IDTEntry idt[256];
+static IDTEntry idt[256] = {0};
 static IDTPointer idt_ptr;
 
-extern void isr32();
-extern void isr14();
 extern void isr0();
 extern void isr1();
+extern void isr2();
+extern void isr3();
+extern void isr4();
+extern void isr6();
+extern void isr8();
+extern void isr13();
+extern void isr14();
+extern void isr32();
 
 static void pic_remap(void) {
     u8 a1 = inb(0x21);
@@ -51,17 +57,26 @@ void pit_init(void) {
 
 void idt_init(void) {
     pic_remap();
-    pit_init();
-    idt_add_entry(0x20, isr32);
     idt_add_entry(0x0, isr0);
     idt_add_entry(0x1, isr1);
+    idt_add_entry(0x2, isr2);
+    idt_add_entry(0x3, isr3);
+    idt_add_entry(0x4, isr4);
+    idt_add_entry(0x6, isr6);
+    idt_add_entry(0x8, isr8);
+    idt_add_entry(0xD, isr13);
     idt_add_entry(0xE, isr14);
+    idt_add_entry(0x20, isr32);
 
     idt_ptr.limit = sizeof(idt) - 1;
     idt_ptr.base  = (u64)&idt;
 
     asm volatile ("lidt %0" : : "m"(idt_ptr));
-    outb(0x21, 0xFF & ~(1));
+    pit_init();
+
+    u8 mask = 0xFF & (u8)(~(0x1));
+    outb(0x21, mask);
+
     asm volatile ("sti" : : :);
 }
 

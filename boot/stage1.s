@@ -1,7 +1,110 @@
+bits 16
+section .stage1
+global protected_init
+extern long_trampoline
+
+protected_init:
+    cli ; this is like the third time just to be safe
+
+    ; do real mode routines here (such as e820 or VESA)
+    call e820_stuff
+    call vga_mode_13
+
+    lgdt [gdt_descriptor]
+
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+
+    jmp 0x08:protected_entry
+
+e820_stuff:
+    pusha
+    mov di, 0x504           ; entries start at 0x504, count stored at 0x500
+    xor ebx, ebx            ; ebx must be 0 to start
+    xor bp, bp              ; entry count
+    mov edx, 0x534D4150     ; "SMAP"
+
+    ; first call
+    mov eax, 0xE820
+    mov [es:di + 20], dword 1   ; force valid ACPI 3.X entry
+    mov ecx, 24
+    int 0x15
+    jc .failed              ; carry on first call = unsupported
+    mov edx, 0x534D4150     ; restore in case BIOS trashed it
+    cmp eax, edx            ; eax must be "SMAP" on success
+    jne .failed
+    test ebx, ebx           ; ebx = 0 means only one entry (useless)
+    je .failed
+    jmp .check
+.loop:
+    mov eax, 0xE820         ; trashed on every call, restore it
+    mov edx, 0x534D4150     ; some BIOSes trash this too
+    mov [es:di + 20], dword 1
+    mov ecx, 24
+    int 0x15
+    jc .done                ; carry = end of list
+.check:
+    jcxz .next              ; skip 0 length response
+    cmp cl, 20              ; did we get a 24 byte ACPI 3.X response?
+    jbe .notext
+    test byte [es:di + 20], 1   ; is the ignore bit clear?
+    je .next
+.notext:
+    mov ecx, [es:di + 8]    ; lower 32 bits of region length
+    or ecx, [es:di + 12]    ; OR with upper 32 bits to check for zero
+    jz .next                ; skip zero length entries
+    inc bp
+    add di, 24
+.next:
+    test ebx, ebx           ; ebx = 0 means list complete
+    jnz .loop
+.done:
+    mov [0x500], bp         ; store entry count at 0x500
+    clc                     ; clear carry flag
+    popa
+    ret
+.failed:
+    stc                     ; set carry to signal failure
+    popa
+    ret
+
+vga_mode_13:
+    mov ax, 0x4F00
+    mov di, 0x7000
+    int 0x10
+    cmp ax, 0x004F
+    jne .failed
+
+    mov ax, 0x4F01
+    mov cx, 0x143
+    mov di, 0x7200
+    int 0x10
+    cmp ax, 0x004F
+    jne .failed
+    
+    mov ax, 0x4F02
+    mov bx, 0x143
+    or  bx, 0x4000
+    int 0x10
+    cmp ax, 0x004F
+    jne .failed
+
+    mov eax, [0x7200 + 0x28]
+    mov [0x6000], eax
+    mov ax, [0x7200 + 0x10]
+    mov [0x6004], ax
+    mov ax, [0x7200 + 0x12]
+    mov [0x6006], ax
+    mov ax, [0x7200 + 0x14]
+    mov [0x6008], ax
+
+    ret
+.failed:
+    ret
+
 bits 32
 section .stage1
-global protected_entry
-extern long_trampoline
 
 protected_entry:
     cli
@@ -14,25 +117,8 @@ protected_entry:
     mov esp, 0x90000 ; temp stack
 
     call check_a20 ; checks a20
-    call test_print ; prints zzboot
 
     jmp start_long
-
-test_print:
-    mov byte [0xB8000], 'Z'
-    mov byte [0xB8002], 'Z'
-    mov byte [0xB8004], 'B'
-    mov byte [0xB8006], 'O'
-    mov byte [0xB8008], 'O'
-    mov byte [0xB800A], 'T'
-    mov byte [0xB8001], 0x0F
-    mov byte [0xB8003], 0x0F
-    mov byte [0xB8005], 0x0F
-    mov byte [0xB8007], 0x0F
-    mov byte [0xB8009], 0x0F
-    mov byte [0xB800B], 0x0F
-
-    ret
 
 check_a20:
     push ds
@@ -96,6 +182,17 @@ gdt64_end:
 gdt64_descriptor:
     dw gdt64_end - gdt64 - 1
     dq gdt64
+
+align 8
+gdt_start:
+    dq 0x0000000000000000 ; null
+    dq 0x00CF9A000000FFFF ; code
+    dq 0x00CF92000000FFFF ; data
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
 
 align 4096
 pml4:

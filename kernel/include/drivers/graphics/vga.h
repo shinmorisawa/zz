@@ -2,6 +2,8 @@
 #include "types.h"
 #include "drivers/graphics/graphics.h"
 
-#define VGA_COLOR(fg, bg) (((bg) << 4) | ((fg) & 0xF))
+#define VGA_BASE 0xB8000
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
 
-GraphicsTextDriver vga_driver_factory();
+TextDriver* vga_driver_factory();

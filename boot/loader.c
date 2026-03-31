@@ -60,6 +60,7 @@ void memcpy(void* dst, const void* src, u64 n) {
 __attribute__((section(".stage2")))
 void load_elf(void) {
     Elf64_Ehdr* header = (Elf64_Ehdr*)ELF_BASE;
+
     if (header->e_ident[0] != 0x7F || header->e_ident[1] != 'E' || header->e_ident[2] != 'L' || header->e_ident[3] != 'F') {
         halt();
     }

@@ -1,4 +1,3 @@
-#include <__stdarg_va_list.h>
 #include <stdarg.h>
 #include "types.h"
 #include "utils.h"
@@ -130,9 +129,18 @@ void sleep(u64 milliseconds) {
     return;
 }
 
-void kpanic(void) {
+void kpanic(const char* text) {
+    kprintf("KERNEL PANIC:\n");
+    kprintf("error: %s\n", text);
+    kprintf("halting\n");
     asm volatile ("cli");
     while (1) {
         asm volatile ("hlt");
+    }
+}
+
+void memset(u8* addr, u8 value, u64 amount) {
+    for (u64 i = 0; i < amount; i++) {
+        addr[i] = value;
     }
 }

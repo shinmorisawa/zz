@@ -1,12 +1,12 @@
 CC := clang
 AS := nasm
-LD := ld.lld
+LD := ld
 
 # sources
 include src/sources.mk
 include src/boot/sources.mk
 
-CFLAGS := -Iinclude/ -ffreestanding -fno-stack-protector -fno-pic -fno-pie -fno-asynchronous-unwind-tables -target x86_64-pc-none-elf -O0 -Wall -Wextra -g -mno-red-zone -include include/config.h
+CFLAGS := -Iinclude/ -ffreestanding -fno-stack-protector -fno-pic -fno-pie -fno-asynchronous-unwind-tables -target x86_64-pc-none-elf -O0 -Wall -Wextra -g -mno-red-zone -mno-sse -mno-sse2 -mno-mmx -include include/config.h
 ASFLAGS := -f elf64
 LDFLAGS := -m elf_x86_64 -T linker.ld -nostdlib
 
@@ -25,10 +25,10 @@ final: $(TARGET)
 	cat ./$(BUILDDIR)/zzboot.bin $(TARGET) > $(BUILDDIR)/final.img
 
 run: final
-	qemu-system-x86_64 -drive format=raw,file=$(BUILDDIR)/final.img -serial stdio
+	qemu-system-x86_64 -drive format=raw,file=$(BUILDDIR)/final.img -serial stdio -device bochs-display
 
 run-debug: final
-	qemu-system-x86_64 -drive format=raw,file=$(BUILDDIR)/final.img -serial stdio -s -S
+	qemu-system-x86_64 -drive format=raw,file=$(BUILDDIR)/final.img -serial stdio -device bochs-display -s -S
 
 run-nodisplay: final
 	qemu-system-x86_64 -nographic -drive format=raw,file=$(BUILDDIR)/final.img -serial mon:stdio
